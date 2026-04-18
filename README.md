@@ -2,7 +2,7 @@
 
 **VerdeAI: AI-Optimized. Earth-Aligned.**
 
-Enterprise network operations platform focused on automated device discovery, inventory intelligence, and topology mapping.
+Enterprise network and datacenter operations platform focused on AI-driven discovery, control, governance, and efficiency.
 
 ## Initial Release Capabilities
 
@@ -11,12 +11,13 @@ Enterprise network operations platform focused on automated device discovery, in
 - Build and serve graph topology (nodes + links)
 - Admin console with RBAC-aware access control and role assignment UI
 - MongoDB persistence for users, devices, discovery jobs, and topology snapshots
+- Strategic AI pipeline and engineering todo views for enterprise roadmap execution
 
 ## Workspaces
 
-- `apps/api`: TypeScript API service with auth, RBAC, discovery, inventory, topology endpoints
-- `apps/admin-ui`: React + Vite admin portal
-- `packages/shared`: Shared domain types and constants
+- `apps/api`: TypeScript API service with auth, RBAC, discovery, inventory, topology, strategy endpoints
+- `apps/admin-ui`: React + Vite enterprise admin portal
+- `packages/shared`: Shared domain types, RBAC definitions, and roadmap contracts
 
 ## Quick Start
 
@@ -35,16 +36,17 @@ Enterprise network operations platform focused on automated device discovery, in
 - Default DB: `verdeai`
 - Collections are created automatically at startup by Mongoose models
 
+## Product Direction
+
+Ultimate goal: AI-powered complete datacenter management covering switch configuration health checks, configuration audits, power efficiency optimization, and intelligent forecasting of resource requirements.
+
+See:
+- `docs/product-pipeline.md`
+- `docs/todos.md`
+
 ## Security Foundations (R1)
 
 - JWT authentication and tenant-aware claims
 - Role and permission guards
 - Auditable discovery job lifecycle
 - RBAC role assignment API and UI controls
-
-## Next After R1
-
-- SNMP/SSH/Netconf connector pack
-- Continuous sync + drift detection
-- Policy engine and intent validation
-- HA control plane and event streaming

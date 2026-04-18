@@ -8,6 +8,7 @@ import { devicesRoutes } from "./routes/devices.routes.js";
 import { topologyRoutes } from "./routes/topology.routes.js";
 import { rbacRoutes } from "./routes/rbac.routes.js";
 import { usersRoutes } from "./routes/users.routes.js";
+import { strategyRoutes } from "./routes/strategy.routes.js";
 import { BRAND } from "@verdeai/shared";
 import { connectMongo } from "./lib/mongo.js";
 import { seedUsersIfMissing } from "./lib/store.js";
@@ -34,6 +35,7 @@ async function buildServer() {
   await topologyRoutes(app);
   await rbacRoutes(app);
   await usersRoutes(app);
+  await strategyRoutes(app);
 
   return app;
 }

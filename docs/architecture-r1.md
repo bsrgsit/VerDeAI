@@ -14,6 +14,7 @@ Deliver an enterprise control plane that can:
 - Classify discovered assets (`server`, `baremetal`, `switch`, `router`, `firewall`, `storage`)
 - Produce a queryable topology graph
 - Expose an RBAC-governed admin UI
+- Track enterprise delivery pipeline and todos for AI datacenter management goals
 
 ## System Components
 
@@ -23,6 +24,7 @@ Deliver an enterprise control plane that can:
 - Discovery job lifecycle APIs
 - Device inventory APIs
 - Topology graph API
+- Strategy pipeline and todo APIs
 - MongoDB persistence layer
 
 2. `@verdeai/admin-ui`
@@ -30,9 +32,10 @@ Deliver an enterprise control plane that can:
 - Discovery trigger UX
 - Inventory and topology visibility
 - Access-control management (roles + user role assignment)
+- AI pipeline and product todo dashboard
 
 3. `@verdeai/shared`
-- Shared domain contracts and RBAC definitions
+- Shared domain contracts, RBAC definitions, and roadmap models
 
 ## Persistence Layer
 
@@ -66,3 +69,5 @@ Deliver an enterprise control plane that can:
 - `PATCH /rbac/users/:userId/role`
 - `GET /users`
 - `GET /users/me`
+- `GET /strategy/pipeline`
+- `GET /strategy/todos`
