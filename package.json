@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "build": "npm run build -w @verdeai/shared && npm run build -w @verdeai/api && npm run build -w @verdeai/admin-ui",
+    "build:ui": "npm run build -w @verdeai/shared && npm run build -w @verdeai/admin-ui",
     "dev:api": "npm run dev -w @verdeai/api",
     "dev:ui": "npm run dev -w @verdeai/admin-ui"
   },

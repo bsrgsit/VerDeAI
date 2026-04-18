@@ -1,11 +1,148 @@
-import type { Permission, User } from "@verdeai/shared";
-import { ROLE_PERMISSIONS } from "@verdeai/shared";
+import type {
+  Device,
+  DiscoveryJob,
+  Permission,
+  PipelineInitiative,
+  PlatformTodo,
+  Role,
+  RoleName,
+  TopologyGraph,
+  User,
+} from "@verdeai/shared";
+import { PLATFORM_TODOS, ROLE_PERMISSIONS, ROLES, STRATEGY_PIPELINE } from "@verdeai/shared";
 
-const API_BASE = "http://localhost:8080";
+const configuredApiBase = (import.meta.env.VITE_API_BASE as string | undefined)?.trim();
+export const IS_DEMO_MODE = import.meta.env.VITE_UI_ONLY_DEMO === "true" || !configuredApiBase;
+const API_BASE = configuredApiBase ?? "http://localhost:8080";
 
 export interface Session {
   token: string;
   user: User;
+}
+
+type MockState = {
+  users: User[];
+  devices: Device[];
+  jobs: DiscoveryJob[];
+  topology: TopologyGraph;
+};
+
+const defaultTenantId = "tenant-verdeai";
+
+const mockState: MockState = {
+  users: [
+    {
+      id: "user-admin",
+      tenantId: defaultTenantId,
+      email: "admin@verdeai.local",
+      displayName: "VerdeAI Admin",
+      role: "platform_admin",
+    },
+    {
+      id: "user-operator",
+      tenantId: defaultTenantId,
+      email: "operator@verdeai.local",
+      displayName: "VerdeAI Operator",
+      role: "operator",
+    },
+    {
+      id: "user-auditor",
+      tenantId: defaultTenantId,
+      email: "auditor@verdeai.local",
+      displayName: "VerdeAI Auditor",
+      role: "auditor",
+    },
+  ],
+  devices: [
+    {
+      id: "dev_demo_1",
+      tenantId: defaultTenantId,
+      hostname: "switch-core-01",
+      mgmtIp: "10.10.10.11",
+      kind: "switch",
+      vendor: "Juniper",
+      model: "QFX",
+      discoveredAt: new Date().toISOString(),
+      source: "manual",
+      confidence: 0.96,
+    },
+    {
+      id: "dev_demo_2",
+      tenantId: defaultTenantId,
+      hostname: "server-ai-01",
+      mgmtIp: "10.10.10.21",
+      kind: "server",
+      vendor: "Dell",
+      model: "PowerEdge",
+      discoveredAt: new Date().toISOString(),
+      source: "manual",
+      confidence: 0.92,
+    },
+  ],
+  jobs: [],
+  topology: {
+    tenantId: defaultTenantId,
+    generatedAt: new Date().toISOString(),
+    nodes: [
+      { id: "dev_demo_1", label: "switch-core-01", kind: "switch", mgmtIp: "10.10.10.11" },
+      { id: "dev_demo_2", label: "server-ai-01", kind: "server", mgmtIp: "10.10.10.21" },
+    ],
+    links: [
+      {
+        id: "ln_demo_1",
+        sourceNodeId: "dev_demo_1",
+        targetNodeId: "dev_demo_2",
+        relation: "layer2",
+        confidence: 0.9,
+      },
+    ],
+  },
+};
+
+function synthesizeDiscovery(cidrRanges: string[]): { devices: Device[]; topology: TopologyGraph } {
+  const now = new Date().toISOString();
+  const generatedDevices: Device[] = cidrRanges.flatMap((cidr, index) => {
+    const base = cidr.split("/")[0] ?? "10.0.0.0";
+    const octets = base.split(".");
+    const prefix = `${octets[0] ?? "10"}.${octets[1] ?? "0"}.${octets[2] ?? "0"}`;
+    const ip = `${prefix}.${30 + index}`;
+    const deviceKinds: Device["kind"][] = ["switch", "router", "server", "baremetal", "firewall", "storage"];
+    const kind = deviceKinds[index % deviceKinds.length] ?? "unknown";
+    return [
+      {
+        id: `dev_demo_discovery_${index}`,
+        tenantId: defaultTenantId,
+        hostname: `${kind}-${ip.replaceAll(".", "-")}`,
+        mgmtIp: ip,
+        kind,
+        vendor: index % 2 === 0 ? "Juniper" : "Arista",
+        model: `${kind.toUpperCase()}-${100 + index}`,
+        discoveredAt: now,
+        source: "seed-ip-range",
+        confidence: 0.82,
+      },
+    ];
+  });
+
+  const devices = [...mockState.devices.filter((d) => d.source !== "seed-ip-range"), ...generatedDevices];
+  const nodes = devices.map((d) => ({ id: d.id, label: d.hostname, kind: d.kind, mgmtIp: d.mgmtIp }));
+  const links = nodes.slice(0, -1).map((node, idx) => ({
+    id: `ln_demo_discovery_${idx}`,
+    sourceNodeId: node.id,
+    targetNodeId: nodes[idx + 1]!.id,
+    relation: idx % 2 === 0 ? "layer2" : "layer3",
+    confidence: 0.78,
+  })) as TopologyGraph["links"];
+
+  return {
+    devices,
+    topology: {
+      tenantId: defaultTenantId,
+      generatedAt: now,
+      nodes,
+      links,
+    },
+  };
 }
 
 async function unwrap<T>(res: Response, path: string): Promise<T> {
@@ -20,6 +157,14 @@ async function unwrap<T>(res: Response, path: string): Promise<T> {
 }
 
 export async function login(email: string): Promise<Session> {
+  if (IS_DEMO_MODE) {
+    const user = mockState.users.find((candidate) => candidate.email === email);
+    if (!user) {
+      throw new Error("Invalid credentials");
+    }
+    return { token: `demo-token-${user.id}`, user };
+  }
+
   const res = await fetch(`${API_BASE}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -30,6 +175,22 @@ export async function login(email: string): Promise<Session> {
 }
 
 export async function apiGet<T>(path: string, token: string): Promise<T> {
+  if (IS_DEMO_MODE) {
+    const userId = token.replace("demo-token-", "");
+    const currentUser = mockState.users.find((u) => u.id === userId) ?? mockState.users[0]!;
+
+    if (path === "/devices") return mockState.devices as T;
+    if (path === "/discovery/jobs") return mockState.jobs as T;
+    if (path === "/topology") return mockState.topology as T;
+    if (path === "/strategy/pipeline") return STRATEGY_PIPELINE as PipelineInitiative[] as T;
+    if (path === "/strategy/todos") return PLATFORM_TODOS as PlatformTodo[] as T;
+    if (path === "/rbac/roles") return ROLES as Role[] as T;
+    if (path === "/rbac/users" || path === "/users") return mockState.users as T;
+    if (path === "/users/me") return currentUser as T;
+
+    throw new Error(`Unsupported demo endpoint: ${path}`);
+  }
+
   const res = await fetch(`${API_BASE}${path}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -38,6 +199,34 @@ export async function apiGet<T>(path: string, token: string): Promise<T> {
 }
 
 export async function apiPost<T>(path: string, token: string, body: unknown): Promise<T> {
+  if (IS_DEMO_MODE) {
+    if (path === "/discovery/jobs") {
+      const input = body as { cidrRanges: string[]; useSnmp: boolean; useLldp: boolean };
+      const now = new Date().toISOString();
+      const job: DiscoveryJob = {
+        id: `job_demo_${Date.now()}`,
+        tenantId: defaultTenantId,
+        status: "completed",
+        startedAt: now,
+        finishedAt: now,
+        requestedBy: token.replace("demo-token-", "user-admin"),
+        input,
+      };
+
+      const discovery = synthesizeDiscovery(input.cidrRanges);
+      mockState.devices = discovery.devices;
+      mockState.topology = discovery.topology;
+      job.summary = {
+        devicesFound: discovery.devices.length,
+        linksFound: discovery.topology.links.length,
+      };
+      mockState.jobs = [job, ...mockState.jobs].slice(0, 30);
+
+      return job as T;
+    }
+    throw new Error(`Unsupported demo endpoint: ${path}`);
+  }
+
   const res = await fetch(`${API_BASE}${path}`, {
     method: "POST",
     headers: {
@@ -51,6 +240,21 @@ export async function apiPost<T>(path: string, token: string, body: unknown): Pr
 }
 
 export async function apiPatch<T>(path: string, token: string, body: unknown): Promise<T> {
+  if (IS_DEMO_MODE) {
+    const rolePathMatch = path.match(/^\/rbac\/users\/([^/]+)\/role$/);
+    if (rolePathMatch) {
+      const userId = rolePathMatch[1]!;
+      const role = (body as { role: RoleName }).role;
+      const user = mockState.users.find((u) => u.id === userId);
+      if (!user) {
+        throw new Error("User not found");
+      }
+      user.role = role;
+      return user as T;
+    }
+    throw new Error(`Unsupported demo endpoint: ${path}`);
+  }
+
   const res = await fetch(`${API_BASE}${path}`, {
     method: "PATCH",
     headers: {

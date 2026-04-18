@@ -30,6 +30,18 @@ Enterprise network and datacenter operations platform focused on AI-driven disco
 4. Run Admin UI:
    - `npm run dev:ui`
 
+## Render UI-Only Validation (Skip API)
+
+Use this to validate the product UI before deploying API services.
+
+- Build command:
+  - `npm install && npm run build:ui`
+- Publish directory:
+  - `apps/admin-ui/dist`
+- Optional environment variables:
+  - `VITE_UI_ONLY_DEMO=true` (forces demo mode)
+  - `VITE_API_BASE=https://your-api-url` (when API is ready)
+
 ## MongoDB (Required)
 
 - Default URI: `mongodb://localhost:27017/verdeai`

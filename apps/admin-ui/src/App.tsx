@@ -10,7 +10,7 @@ import type {
   User,
 } from "@verdeai/shared";
 import { BRAND } from "@verdeai/shared";
-import { apiGet, apiPatch, apiPost, hasPermission, login, type Session } from "./lib/api";
+import { apiGet, apiPatch, apiPost, hasPermission, IS_DEMO_MODE, login, type Session } from "./lib/api";
 
 type View = "command" | "topology" | "access" | "pipeline";
 
@@ -155,6 +155,7 @@ export function App() {
             <p>{BRAND.tagline}</p>
           </div>
           <p className="muted">Enterprise Datacenter Control Plane</p>
+          {IS_DEMO_MODE && <p className="muted">Demo mode is active (API not required).</p>}
           <p className="muted">Select a demo identity:</p>
           <div className="auth-buttons">
             {demoUsers.map((email) => (
@@ -175,6 +176,7 @@ export function App() {
         <div>
           <h1>{BRAND.name} Enterprise Datacenter Manager</h1>
           <p>{BRAND.tagline}</p>
+          {IS_DEMO_MODE && <p className="meta">Running in UI-only demo mode.</p>}
         </div>
         <div className="header-right">
           <nav className="tabs" aria-label="Main views">
