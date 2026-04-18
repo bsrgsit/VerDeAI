@@ -151,12 +151,13 @@ export function App() {
       <main className="auth-page">
         <div className="auth-card">
           <div className="brand-lockup">
+            <p className="eyebrow">VerdeAI Platform</p>
             <h1>{BRAND.name}</h1>
             <p>{BRAND.tagline}</p>
           </div>
           <p className="muted">Enterprise Datacenter Control Plane</p>
           {IS_DEMO_MODE && <p className="muted">Demo mode is active (API not required).</p>}
-          <p className="muted">Select a demo identity:</p>
+          <p className="muted">Select an identity:</p>
           <div className="auth-buttons">
             {demoUsers.map((email) => (
               <button key={email} onClick={() => handleLogin(email)}>
@@ -171,264 +172,276 @@ export function App() {
   }
 
   return (
-    <main className="layout">
-      <header className="header">
-        <div>
-          <h1>{BRAND.name} Enterprise Datacenter Manager</h1>
+    <main className="layout-shell">
+      <aside className="sidebar">
+        <div className="sidebar-brand">
+          <p className="eyebrow">VerdeAI</p>
+          <h2>Datacenter OS</h2>
           <p>{BRAND.tagline}</p>
-          {IS_DEMO_MODE && <p className="meta">Running in UI-only demo mode.</p>}
         </div>
-        <div className="header-right">
-          <nav className="tabs" aria-label="Main views">
-            <button className={view === "command" ? "active" : ""} onClick={() => setView("command")}>
-              Command Center
+
+        <nav className="nav-stack" aria-label="Main views">
+          <button className={view === "command" ? "active" : ""} onClick={() => setView("command")}>
+            Command Center
+          </button>
+          <button className={view === "topology" ? "active" : ""} onClick={() => setView("topology")}>
+            Topology
+          </button>
+          <button className={view === "pipeline" ? "active" : ""} onClick={() => setView("pipeline")}>
+            AI Pipeline
+          </button>
+          {hasPermission(session.user, "rbac.read") && (
+            <button className={view === "access" ? "active" : ""} onClick={() => setView("access")}>
+              Access Control
             </button>
-            <button className={view === "topology" ? "active" : ""} onClick={() => setView("topology")}>
-              Topology
-            </button>
-            <button className={view === "pipeline" ? "active" : ""} onClick={() => setView("pipeline")}>
-              AI Pipeline
-            </button>
-            {hasPermission(session.user, "rbac.read") && (
-              <button className={view === "access" ? "active" : ""} onClick={() => setView("access")}>
-                Access Control
-              </button>
-            )}
-          </nav>
-          <div className="user-pill">
-            {session.user.displayName} ({session.user.role})
+          )}
+        </nav>
+
+        <div className="sidebar-foot">
+          <p className="meta">Signed in as</p>
+          <p className="user-name">{session.user.displayName}</p>
+          <p className="meta">{session.user.role}</p>
+        </div>
+      </aside>
+
+      <section className="workspace">
+        <header className="topbar">
+          <div>
+            <h1>{BRAND.name} Enterprise Datacenter Manager</h1>
+            <p>Unified operations for discovery, governance, efficiency, and forecasting.</p>
+            {IS_DEMO_MODE && <p className="meta">Running in UI-only demo mode.</p>}
           </div>
-        </div>
-      </header>
+          <div className="status-chip">Control Plane Online</div>
+        </header>
 
-      <section className="stats-grid">
-        <article>
-          <h2>Discovered Assets</h2>
-          <strong>{stats.deviceCount}</strong>
-        </article>
-        <article>
-          <h2>Active Topology Links</h2>
-          <strong>{stats.linkCount}</strong>
-        </article>
-        <article>
-          <h2>Discovery Runs</h2>
-          <strong>{stats.jobCount}</strong>
-        </article>
-        <article>
-          <h2>Open Engineering Todos</h2>
-          <strong>{stats.openTodos}</strong>
-        </article>
-        <article>
-          <h2>Pipeline In Flight</h2>
-          <strong>{stats.pipelineInFlight}</strong>
-        </article>
+        <section className="stats-grid">
+          <article>
+            <h2>Discovered Assets</h2>
+            <strong>{stats.deviceCount}</strong>
+          </article>
+          <article>
+            <h2>Topology Links</h2>
+            <strong>{stats.linkCount}</strong>
+          </article>
+          <article>
+            <h2>Discovery Runs</h2>
+            <strong>{stats.jobCount}</strong>
+          </article>
+          <article>
+            <h2>Open Todos</h2>
+            <strong>{stats.openTodos}</strong>
+          </article>
+          <article>
+            <h2>Pipeline Active</h2>
+            <strong>{stats.pipelineInFlight}</strong>
+          </article>
+        </section>
+
+        {view === "command" && (
+          <>
+            <section className="panel hero-panel">
+              <h3>Strategic Objective</h3>
+              <p>
+                AI-powered complete datacenter management across discovery, switch operations, health checks,
+                configuration audits, power optimization, and intelligent resource forecasting.
+              </p>
+            </section>
+
+            <section className="panel">
+              <h3>Discovery Operations</h3>
+              {hasPermission(session.user, "discovery.write") ? (
+                <>
+                  <label>Seed CIDR Ranges</label>
+                  <input value={cidrs} onChange={(event) => setCidrs(event.target.value)} />
+                  <button onClick={runDiscovery} disabled={busy}>
+                    {busy ? "Running..." : "Run Discovery"}
+                  </button>
+                </>
+              ) : (
+                <p className="muted">No permission to execute discovery jobs.</p>
+              )}
+            </section>
+
+            <section className="panel">
+              <h3>Discovered Inventory</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Hostname</th>
+                    <th>IP</th>
+                    <th>Type</th>
+                    <th>Vendor</th>
+                    <th>Confidence</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {devices.map((device) => (
+                    <tr key={device.id}>
+                      <td>{device.hostname}</td>
+                      <td>{device.mgmtIp}</td>
+                      <td>{device.kind}</td>
+                      <td>{device.vendor ?? "-"}</td>
+                      <td>{Math.round(device.confidence * 100)}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+
+            <section className="panel">
+              <h3>Discovery Job History</h3>
+              <ul className="list-clean">
+                {jobs.map((job) => (
+                  <li key={job.id}>
+                    <strong>{job.id}</strong> | {job.status} | devices: {job.summary?.devicesFound ?? 0} | links:{" "}
+                    {job.summary?.linksFound ?? 0}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </>
+        )}
+
+        {view === "topology" && (
+          <section className="grid-two">
+            <article className="panel">
+              <h3>Topology Nodes</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Node ID</th>
+                    <th>Label</th>
+                    <th>Type</th>
+                    <th>IP</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(topology?.nodes ?? []).map((node) => (
+                    <tr key={node.id}>
+                      <td>{node.id}</td>
+                      <td>{node.label}</td>
+                      <td>{node.kind}</td>
+                      <td>{node.mgmtIp}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </article>
+            <article className="panel">
+              <h3>Topology Links</h3>
+              <ul className="list-clean">
+                {(topology?.links ?? []).map((link) => (
+                  <li key={link.id}>
+                    <code>{link.sourceNodeId}</code> {" -> "} <code>{link.targetNodeId}</code> ({link.relation})
+                  </li>
+                ))}
+              </ul>
+            </article>
+          </section>
+        )}
+
+        {view === "pipeline" && (
+          <section className="grid-two-wide">
+            <article className="panel">
+              <h3>Strategic Pipeline</h3>
+              <div className="pipeline-grid">
+                {pipeline.map((item) => (
+                  <div key={item.id} className="pipeline-card">
+                    <p className={`stage-tag ${stageBadge(item.stage)}`}>{item.stage.replace("_", " ")}</p>
+                    <h4>{item.title}</h4>
+                    <p>{item.objective}</p>
+                    <p className="meta">Owner: {item.owner}</p>
+                    <p className="meta">Target: {item.targetQuarter}</p>
+                    <ul className="list-clean tight">
+                      {item.kpis.map((kpi) => (
+                        <li key={kpi}>{kpi}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </article>
+            <article className="panel">
+              <h3>Engineering Todo Pipeline</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Todo</th>
+                    <th>Domain</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {todos.map((todo) => (
+                    <tr key={todo.id}>
+                      <td>
+                        <strong>{todo.title}</strong>
+                        <div className="meta">{todo.description}</div>
+                      </td>
+                      <td>{todo.domain}</td>
+                      <td>{todo.priority.toUpperCase()}</td>
+                      <td>
+                        <span className={`todo-tag ${todoBadge(todo.status)}`}>{todo.status}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </article>
+          </section>
+        )}
+
+        {view === "access" && hasPermission(session.user, "rbac.read") && (
+          <section className="grid-two">
+            <article className="panel">
+              <h3>Roles</h3>
+              <ul className="list-clean">
+                {roles.map((role) => (
+                  <li key={role.id}>
+                    <strong>{role.name}</strong> | {role.permissions.length} permissions | {role.description}
+                  </li>
+                ))}
+              </ul>
+            </article>
+            <article className="panel">
+              <h3>User Role Assignments</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((u) => (
+                    <tr key={u.id}>
+                      <td>{u.displayName}</td>
+                      <td>{u.email}</td>
+                      <td>
+                        {hasPermission(session.user, "rbac.write") && hasPermission(session.user, "users.write") ? (
+                          <select value={u.role} onChange={(event) => changeUserRole(u.id, event.target.value as RoleName)}>
+                            {roleOptions.map((opt) => (
+                              <option key={opt} value={opt}>
+                                {opt}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          u.role
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </article>
+          </section>
+        )}
+
+        {error && <p className="error">{error}</p>}
       </section>
-
-      {view === "command" && (
-        <>
-          <section className="panel hero-panel">
-            <h3>Ultimate Goal</h3>
-            <p>
-              AI-powered complete datacenter management across discovery, switch operations, health checks, config audits,
-              power optimization, and intelligent resource forecasting.
-            </p>
-          </section>
-
-          <section className="panel">
-            <h3>Discovery Operations</h3>
-            {hasPermission(session.user, "discovery.write") ? (
-              <>
-                <label>Seed CIDR Ranges</label>
-                <input value={cidrs} onChange={(event) => setCidrs(event.target.value)} />
-                <button onClick={runDiscovery} disabled={busy}>
-                  {busy ? "Running..." : "Run Discovery"}
-                </button>
-              </>
-            ) : (
-              <p className="muted">No permission to execute discovery jobs.</p>
-            )}
-          </section>
-
-          <section className="panel">
-            <h3>Discovered Inventory</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Hostname</th>
-                  <th>IP</th>
-                  <th>Type</th>
-                  <th>Vendor</th>
-                  <th>Confidence</th>
-                </tr>
-              </thead>
-              <tbody>
-                {devices.map((device) => (
-                  <tr key={device.id}>
-                    <td>{device.hostname}</td>
-                    <td>{device.mgmtIp}</td>
-                    <td>{device.kind}</td>
-                    <td>{device.vendor ?? "-"}</td>
-                    <td>{Math.round(device.confidence * 100)}%</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
-
-          <section className="panel">
-            <h3>Discovery Job History</h3>
-            <ul className="list-clean">
-              {jobs.map((job) => (
-                <li key={job.id}>
-                  <strong>{job.id}</strong> | {job.status} | devices: {job.summary?.devicesFound ?? 0} | links:
-                  {" "}
-                  {job.summary?.linksFound ?? 0}
-                </li>
-              ))}
-            </ul>
-          </section>
-        </>
-      )}
-
-      {view === "topology" && (
-        <section className="grid-two">
-          <article className="panel">
-            <h3>Topology Nodes</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Node ID</th>
-                  <th>Label</th>
-                  <th>Type</th>
-                  <th>IP</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(topology?.nodes ?? []).map((node) => (
-                  <tr key={node.id}>
-                    <td>{node.id}</td>
-                    <td>{node.label}</td>
-                    <td>{node.kind}</td>
-                    <td>{node.mgmtIp}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </article>
-          <article className="panel">
-            <h3>Topology Links</h3>
-            <ul className="list-clean">
-              {(topology?.links ?? []).map((link) => (
-                <li key={link.id}>
-                  <code>{link.sourceNodeId}</code> {" -> "} <code>{link.targetNodeId}</code> ({link.relation})
-                </li>
-              ))}
-            </ul>
-          </article>
-        </section>
-      )}
-
-      {view === "pipeline" && (
-        <section className="grid-two-wide">
-          <article className="panel">
-            <h3>Strategic Pipeline</h3>
-            <div className="pipeline-grid">
-              {pipeline.map((item) => (
-                <div key={item.id} className="pipeline-card">
-                  <p className={`stage-tag ${stageBadge(item.stage)}`}>{item.stage.replace("_", " ")}</p>
-                  <h4>{item.title}</h4>
-                  <p>{item.objective}</p>
-                  <p className="meta">Owner: {item.owner}</p>
-                  <p className="meta">Target: {item.targetQuarter}</p>
-                  <ul className="list-clean tight">
-                    {item.kpis.map((kpi) => (
-                      <li key={kpi}>{kpi}</li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </article>
-          <article className="panel">
-            <h3>Engineering Todo Pipeline</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Todo</th>
-                  <th>Domain</th>
-                  <th>Priority</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {todos.map((todo) => (
-                  <tr key={todo.id}>
-                    <td>
-                      <strong>{todo.title}</strong>
-                      <div className="meta">{todo.description}</div>
-                    </td>
-                    <td>{todo.domain}</td>
-                    <td>{todo.priority.toUpperCase()}</td>
-                    <td>
-                      <span className={`todo-tag ${todoBadge(todo.status)}`}>{todo.status}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </article>
-        </section>
-      )}
-
-      {view === "access" && hasPermission(session.user, "rbac.read") && (
-        <section className="grid-two">
-          <article className="panel">
-            <h3>Roles</h3>
-            <ul className="list-clean">
-              {roles.map((role) => (
-                <li key={role.id}>
-                  <strong>{role.name}</strong> | {role.permissions.length} permissions | {role.description}
-                </li>
-              ))}
-            </ul>
-          </article>
-          <article className="panel">
-            <h3>User Role Assignments</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((u) => (
-                  <tr key={u.id}>
-                    <td>{u.displayName}</td>
-                    <td>{u.email}</td>
-                    <td>
-                      {hasPermission(session.user, "rbac.write") && hasPermission(session.user, "users.write") ? (
-                        <select value={u.role} onChange={(event) => changeUserRole(u.id, event.target.value as RoleName)}>
-                          {roleOptions.map((opt) => (
-                            <option key={opt} value={opt}>
-                              {opt}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        u.role
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </article>
-        </section>
-      )}
-
-      {error && <p className="error">{error}</p>}
     </main>
   );
 }
