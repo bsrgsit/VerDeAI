@@ -320,7 +320,7 @@ export function App() {
             <ul className="list-clean">
               {(topology?.links ?? []).map((link) => (
                 <li key={link.id}>
-                  <code>{link.sourceNodeId}</code> -> <code>{link.targetNodeId}</code> ({link.relation})
+                  <code>{link.sourceNodeId}</code> {" -> "} <code>{link.targetNodeId}</code> ({link.relation})
                 </li>
               ))}
             </ul>
