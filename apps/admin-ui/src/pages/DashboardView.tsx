@@ -129,7 +129,7 @@ export const DashboardView: React.FC = () => {
                 <div style={{ width: "24px", height: "14px", borderRadius: "10px", background: "#e2e8f0" }} />
              </div>
           </div>
-        </Card>
+        </article>
       </section>
     </>
   );

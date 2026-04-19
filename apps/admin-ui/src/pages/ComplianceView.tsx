@@ -1,5 +1,5 @@
 import React from "react";
-import { Icons } from "../ui/Icons";
+import { Icons } from "../components/ui/Icons";
 import { Button } from "../components/ui/Button";
 
 export const ComplianceView: React.FC = () => {
