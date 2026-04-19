@@ -109,7 +109,21 @@ function normalizeTargets(input: string): string[] {
 
 export function App() {
   const [session, setSession] = useState<Session | null>(null);
-  const [view, setView] = useState<View>("discovery");
+  const [view, setView] = useState<View>(() => {
+    const hash = window.location.hash.replace("#", "");
+    return (["discovery", "topology", "compliance", "approvals", "audit", "access"].includes(hash) ? hash : "discovery") as View;
+  });
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace("#", "");
+      if (["discovery", "topology", "compliance", "approvals", "audit", "access"].includes(hash)) {
+        setView(hash as View);
+      }
+    };
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
   const [devices, setDevices] = useState<Device[]>([]);
   const [jobs, setJobs] = useState<DiscoveryJob[]>([]);
   const [topology, setTopology] = useState<TopologyGraph | null>(null);
@@ -272,76 +286,79 @@ export function App() {
   }
 
   return (
-    <main className="layout-shell">
-      <aside className="sidebar">
-        <div className="sidebar-brand">
-          <p className="eyebrow">VerdeAI</p>
-          <h2>Release 1 Console</h2>
-          <p>Device discovery, credential groups, topology, RBAC.</p>
-        </div>
-
-        <nav className="nav-stack" aria-label="Main views">
-          <button className={view === "discovery" ? "active" : ""} onClick={() => setView("discovery")}>
-            Discovery
-          </button>
-          <button className={view === "topology" ? "active" : ""} onClick={() => setView("topology")}>
-            Topology
-          </button>
-          <button className={view === "compliance" ? "active" : ""} onClick={() => setView("compliance")}>
-            Compliance Dashboard
-          </button>
-          <button className={view === "approvals" ? "active" : ""} onClick={() => setView("approvals")}>
-            Change Approvals
-          </button>
-          <button className={view === "audit" ? "active" : ""} onClick={() => setView("audit")}>
-            Audit Logs
-          </button>
-          {hasPermission(session.user, "rbac.read") && (
-            <button className={view === "access" ? "active" : ""} onClick={() => setView("access")}>
-              Access Control
-            </button>
-          )}
-        </nav>
-
-        <div className="sidebar-foot">
-          <p className="meta">Signed in as</p>
-          <p className="user-name">{session.user.displayName}</p>
-          <p className="meta">{session.user.role}</p>
-        </div>
-      </aside>
-
-      <section className="workspace">
-        <header className="topbar">
-          <div>
-            <h1>{BRAND.name} Device Discovery Manager</h1>
-            <p>Query infrastructure by IP or CIDR, bind credentials at group level, and build a generic topology across network and compute.</p>
-            <p className="meta">Intelligent forecasting and power orchestration are key upcoming capabilities.</p>
-            {IS_DEMO_MODE && <p className="meta">Running in UI-only demo mode.</p>}
+    <div className="app-wrapper">
+      <header className="top-nav">
+        <div className="top-nav-inner">
+          <div className="nav-brand">
+            <p className="eyebrow">VerdeAI</p>
+            <h2>Release 1</h2>
           </div>
-          <div className="status-chip">Release 1 Scope</div>
-        </header>
 
-        <section className="stats-grid compact">
-          <article>
-            <h2>Assets</h2>
-            <strong>{stats.deviceCount}</strong>
-          </article>
-          <article>
-            <h2>Topology Links</h2>
-            <strong>{stats.linkCount}</strong>
-          </article>
-          <article>
-            <h2>Queries</h2>
-            <strong>{stats.queryCount}</strong>
-          </article>
-          <article>
-            <h2>Credential Groups</h2>
-            <strong>{stats.credentialGroupCount}</strong>
-          </article>
-        </section>
+          <nav className="nav-links" aria-label="Main views">
+            <a href="#discovery" className={view === "discovery" ? "active" : ""}>
+              Discovery
+            </a>
+            <a href="#topology" className={view === "topology" ? "active" : ""}>
+              Topology
+            </a>
+            <a href="#compliance" className={view === "compliance" ? "active" : ""}>
+              Compliance
+            </a>
+            <a href="#approvals" className={view === "approvals" ? "active" : ""}>
+              Approvals
+            </a>
+            <a href="#audit" className={view === "audit" ? "active" : ""}>
+              Audit
+            </a>
+            {hasPermission(session.user, "rbac.read") && (
+              <a href="#access" className={view === "access" ? "active" : ""}>
+                Access Control
+              </a>
+            )}
+          </nav>
 
+          <div className="nav-user">
+            <div className="user-info">
+              <span className="user-name">{session.user.displayName}</span>
+              <span className="user-role">{session.user.role}</span>
+            </div>
+            <button className="secondary-button" onClick={() => setSession(null)}>Sign Out</button>
+          </div>
+        </div>
+      </header>
+
+      <main className="main-content">
+        <div className="content-container">
         {view === "discovery" && (
           <>
+            <header className="page-header">
+              <div>
+                <h1>{BRAND.name} Device Discovery Manager</h1>
+                <p>Query infrastructure by IP or CIDR, bind credentials at group level, and build a generic topology across network and compute.</p>
+                <p className="meta">Intelligent forecasting and power orchestration are key upcoming capabilities.</p>
+                {IS_DEMO_MODE && <p className="meta">Running in UI-only demo mode.</p>}
+              </div>
+              <div className="status-chip">Release 1 Scope</div>
+            </header>
+
+            <section className="stats-grid compact">
+              <article>
+                <h2>Assets</h2>
+                <strong>{stats.deviceCount}</strong>
+              </article>
+              <article>
+                <h2>Topology Links</h2>
+                <strong>{stats.linkCount}</strong>
+              </article>
+              <article>
+                <h2>Queries</h2>
+                <strong>{stats.queryCount}</strong>
+              </article>
+              <article>
+                <h2>Credential Groups</h2>
+                <strong>{stats.credentialGroupCount}</strong>
+              </article>
+            </section>
             <section className="hero-grid">
               <article className="panel hero-panel">
                 <div className="panel-head">
@@ -564,7 +581,14 @@ export function App() {
         )}
 
         {view === "topology" && (
-          <section className="grid-two">
+          <>
+            <header className="page-header" style={{ marginBottom: "2rem" }}>
+              <div>
+                <h1>Topology Mapping</h1>
+                <p>Visualize physical and logical connections mapped during discovery runs across the environment.</p>
+              </div>
+            </header>
+            <section className="grid-two">
             <article className="panel">
               <div className="panel-head">
                   <div>
@@ -612,10 +636,18 @@ export function App() {
               </ul>
             </article>
           </section>
+          </>
         )}
 
         {view === "compliance" && (
-          <section className="grid-discovery">
+          <>
+            <header className="page-header" style={{ marginBottom: "2rem" }}>
+              <div>
+                <h1>Compliance Posture</h1>
+                <p>Validate the current device configuration baselines against enterprise standard templates.</p>
+              </div>
+            </header>
+            <section className="grid-discovery">
             <article className="panel">
               <div className="panel-head">
                 <div>
@@ -642,7 +674,7 @@ export function App() {
                     <td>core-sw-01.mgmt</td>
                     <td>Juniper</td>
                     <td>Spine Routing</td>
-                    <td><strong style={{color: "#0f766e"}}>Compliant</strong></td>
+                    <td><strong style={{color: "#4b5320"}}>Compliant</strong></td>
                     <td><button className="secondary-button" style={{padding: "0.25rem 0.5rem", fontSize: "0.8rem"}}>View Report</button></td>
                   </tr>
                   <tr>
@@ -663,10 +695,18 @@ export function App() {
               </table>
             </article>
           </section>
+          </>
         )}
 
         {view === "approvals" && (
-          <section className="grid-two">
+          <>
+            <header className="page-header" style={{ marginBottom: "2rem" }}>
+              <div>
+                <h1>Pending Change Approvals</h1>
+                <p>Review and authorize configuration remediation requests before they are committed to network infrastructure.</p>
+              </div>
+            </header>
+            <section className="grid-two">
             <article className="panel">
               <div className="panel-head">
                 <div>
@@ -682,17 +722,25 @@ export function App() {
                     <p>Requested by: operator@verdeai.local</p>
                   </div>
                   <div style={{display: "flex", gap: "0.5rem", marginTop: "1rem"}}>
-                    <button style={{background: "#0f766e"}}>Approve & Commit</button>
+                    <button style={{background: "#4b5320"}}>Approve & Commit</button>
                     <button className="secondary-button">Deny</button>
                   </div>
                 </div>
               </div>
             </article>
           </section>
+          </>
         )}
 
         {view === "audit" && (
-          <section className="grid-discovery">
+          <>
+            <header className="page-header" style={{ marginBottom: "2rem" }}>
+              <div>
+                <h1>Immutable Event Store</h1>
+                <p>An append-only log detailing all system modifications, discovery triggers, and RBAC actions.</p>
+              </div>
+            </header>
+            <section className="grid-discovery">
             <article className="panel">
               <div className="panel-head">
                 <div>
@@ -720,10 +768,18 @@ export function App() {
               </ul>
             </article>
           </section>
+          </>
         )}
 
         {view === "access" && hasPermission(session.user, "rbac.read") && (
-          <section className="grid-two">
+          <>
+            <header className="page-header" style={{ marginBottom: "2rem" }}>
+              <div>
+                <h1>Access Control</h1>
+                <p>Manage role-based access assignments and view available authorization scopes.</p>
+              </div>
+            </header>
+            <section className="grid-two">
             <article className="panel">
               <div className="panel-head">
                 <div>
@@ -793,10 +849,12 @@ export function App() {
               </table>
             </article>
           </section>
+          </>
         )}
 
         {error && <p className="error">{error}</p>}
-      </section>
-    </main>
+        </div>
+      </main>
+    </div>
   );
 }
