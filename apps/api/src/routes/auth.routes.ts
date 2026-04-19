@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { FastifyInstance } from "fastify";
-import { findUserByEmail } from "../../lib/store.js";
+import { findUserByEmail } from "../lib/store.js";
 
 const loginSchema = z.object({
   email: z.string().email(),

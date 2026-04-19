@@ -1,6 +1,6 @@
 import { nanoid } from "nanoid";
 import type { Device, DiscoveryJob, DiscoveryJobStatus, RoleName, TopologyGraph, User } from "@verdeai/shared";
-import { DeviceModel, DiscoveryJobModel, TopologySnapshotModel, UserModel } from "../models/models.js";
+import { DeviceModel, DiscoveryJobModel, TopologySnapshotModel, UserModel, TopologySnapshotRecord } from "../models/models.js";
 
 const defaultTenant = "tenant-verdeai";
 
@@ -232,7 +232,7 @@ export async function setTopology(graph: TopologyGraph): Promise<void> {
 }
 
 export async function getTenantTopology(tenantId: string): Promise<TopologyGraph> {
-  const record = await TopologySnapshotModel.findOne({ tenantId }).lean();
+  const record = await TopologySnapshotModel.findOne({ tenantId }).lean() as TopologySnapshotRecord | null;
   if (!record) {
     return {
       tenantId,

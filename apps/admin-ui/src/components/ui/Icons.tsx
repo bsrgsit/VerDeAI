@@ -1,11 +1,11 @@
 import React from "react";
 
 // Animated GIF Imports
-import dashboardGif from "../assets/animated-icons/dashboard.gif";
-import discoveryGif from "../assets/animated-icons/discovery.gif";
-import inventoryGif from "../assets/animated-icons/inventory.gif";
-import complianceGif from "../assets/animated-icons/compliance.gif";
-import routerGif from "../assets/animated-icons/router.gif";
+import dashboardGif from "../../assets/animated-icons/dashboard.gif";
+import discoveryGif from "../../assets/animated-icons/discovery.gif";
+import inventoryGif from "../../assets/animated-icons/inventory.gif";
+import complianceGif from "../../assets/animated-icons/compliance.gif";
+import routerGif from "../../assets/animated-icons/router.gif";
 
 interface IconProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   size?: number;
