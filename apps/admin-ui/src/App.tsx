@@ -14,8 +14,9 @@ import {
 } from "./constants";
 
 // Modular Components
-import { TopNav } from "./components/layout/TopNav";
+import { Sidebar } from "./components/layout/Sidebar";
 import { AuthPage } from "./pages/AuthPage";
+import { DashboardView } from "./pages/DashboardView";
 import { DiscoveryView } from "./pages/DiscoveryView";
 import { TopologyView } from "./pages/TopologyView";
 import { ComplianceView } from "./pages/ComplianceView";
@@ -23,6 +24,16 @@ import { ApprovalsView } from "./pages/ApprovalsView";
 import { AuditView } from "./pages/AuditView";
 import { AccessView } from "./pages/AccessView";
 import { useNotification } from "./hooks/useNotification";
+
+const VIEW_WHITELIST: View[] = [
+  "dashboard",
+  "discovery",
+  "topology",
+  "compliance",
+  "approvals",
+  "audit",
+  "access"
+];
 
 export function App() {
   const { notify } = useNotification();
@@ -33,24 +44,18 @@ export function App() {
 
   // Layout State with Persistence
   const [view, setView] = useState<View>(() => {
-    // 1. Check Hash first
     const hash = window.location.hash.replace("#", "");
-    const views: View[] = ["discovery", "topology", "compliance", "approvals", "audit", "access"];
-    if (views.includes(hash as View)) return hash as View;
+    if (VIEW_WHITELIST.includes(hash as View)) return hash as View;
 
-    // 2. Check LocalStorage second
     const savedView = localStorage.getItem("verde_active_view") as View;
-    if (views.includes(savedView)) return savedView;
+    if (VIEW_WHITELIST.includes(savedView)) return savedView;
 
-    return "discovery";
+    return "dashboard"; // New default
   });
 
   // Domain Data State
   const [stats, setStats] = useState({
-    deviceCount: 0,
-    linkCount: 0,
-    queryCount: 0,
-    credentialGroupCount: 4,
+    deviceCount: 0, linkCount: 0, queryCount: 0, credentialGroupCount: 4,
   });
   const [topology, setTopology] = useState<TopologyGraph | null>(null);
   const [users, setUsers] = useState<User[]>([]);
@@ -62,7 +67,7 @@ export function App() {
   const [selectedCredentialGroupId, setSelectedCredentialGroupId] = useState(initialCredentialGroups[0].id);
   const [queryAudit, setQueryAudit] = useState<QueryAudit[]>([]);
 
-  // New Credential Form State
+  // Form State
   const [groupName, setGroupName] = useState("");
   const [groupVendor, setGroupVendor] = useState("Cisco");
   const [groupProtocol, setGroupProtocol] = useState("SSH");
@@ -83,7 +88,7 @@ export function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace("#", "");
-      if (["discovery", "topology", "compliance", "approvals", "audit", "access"].includes(hash)) {
+      if (VIEW_WHITELIST.includes(hash as View)) {
         setView(hash as View);
       }
     };
@@ -119,17 +124,13 @@ export function App() {
     if (!session || busy || !selectedCredentialGroup) return;
     const targets = normalizeTargets(targetInput);
     if (targets.length === 0) {
-      setError("Provide at least one target IP or CIDR.");
-      return;
+      setError("Provide at least one target IP or CIDR."); return;
     }
 
     try {
-      setBusy(true);
-      setError(null);
+      setBusy(true); setError(null);
       const job = await apiPost<DiscoveryJob>("/discovery/jobs", session.token, {
-        cidrRanges: targets,
-        useSnmp: true,
-        useLldp: true,
+        cidrRanges: targets, useSnmp: true, useLldp: true,
       });
 
       setQueryAudit((prev) => [
@@ -153,16 +154,11 @@ export function App() {
 
   function addCredentialGroup() {
     if (!groupName || !groupUsername || !groupScope) {
-      setError("All fields are required.");
-      return;
+      setError("All fields are required."); return;
     }
     const nextGroup: CredentialGroup = {
-      id: `cred-${Date.now()}`,
-      name: groupName,
-      vendor: groupVendor as any,
-      protocol: groupProtocol as any,
-      username: groupUsername,
-      scope: groupScope,
+      id: `cred-${Date.now()}`, name: groupName, vendor: groupVendor as any,
+      protocol: groupProtocol as any, username: groupUsername, scope: groupScope,
     };
     setCredentialGroups((prev) => [nextGroup, ...prev]);
     setSelectedCredentialGroupId(nextGroup.id);
@@ -189,43 +185,47 @@ export function App() {
   }
 
   return (
-    <div className="app-wrapper">
-      <TopNav view={view} session={session} onSignOut={() => setSession(null)} />
+    <div className="app-shell">
+      <Sidebar 
+        view={view} 
+        onViewChange={setView} 
+        userEmail={session.user.email} 
+      />
 
       <main className="main-content">
-        <div className="content-container">
-          {view === "discovery" && (
-            <DiscoveryView 
-              session={session} stats={stats} platformTiles={platformTiles}
-              targetInput={targetInput} setTargetInput={setTargetInput}
-              selectedCredentialGroupId={selectedCredentialGroupId}
-              setSelectedCredentialGroupId={setSelectedCredentialGroupId}
-              credentialGroups={credentialGroups}
-              runDiscovery={runDiscovery} busy={busy}
-              selectedCredentialGroup={selectedCredentialGroup}
-              queryAudit={queryAudit}
-              groupName={groupName} setGroupName={setGroupName}
-              groupVendor={groupVendor} setGroupVendor={setGroupVendor}
-              groupProtocol={groupProtocol} setGroupProtocol={setGroupProtocol}
-              groupUsername={groupUsername} setGroupUsername={setGroupUsername}
-              groupScope={groupScope} setGroupScope={setGroupScope}
-              addCredentialGroup={addCredentialGroup}
-            />
-          )}
+        {view === "dashboard" && <DashboardView />}
+        
+        {view === "discovery" && (
+          <DiscoveryView 
+            session={session} stats={stats} platformTiles={platformTiles}
+            targetInput={targetInput} setTargetInput={setTargetInput}
+            selectedCredentialGroupId={selectedCredentialGroupId}
+            setSelectedCredentialGroupId={setSelectedCredentialGroupId}
+            credentialGroups={credentialGroups}
+            runDiscovery={runDiscovery} busy={busy}
+            selectedCredentialGroup={selectedCredentialGroup}
+            queryAudit={queryAudit}
+            groupName={groupName} setGroupName={setGroupName}
+            groupVendor={groupVendor} setGroupVendor={setGroupVendor}
+            groupProtocol={groupProtocol} setGroupProtocol={setGroupProtocol}
+            groupUsername={groupUsername} setGroupUsername={setGroupUsername}
+            groupScope={groupScope} setGroupScope={setGroupScope}
+            addCredentialGroup={addCredentialGroup}
+          />
+        )}
 
-          {view === "topology" && <TopologyView topology={topology} />}
-          {view === "compliance" && <ComplianceView />}
-          {view === "approvals" && <ApprovalsView />}
-          {view === "audit" && <AuditView />}
-          {view === "access" && (
-            <AccessView 
-              session={session} roles={roles} users={users} 
-              roleOptions={roleOptions} changeUserRole={changeUserRole} 
-            />
-          )}
+        {view === "topology" && <TopologyView topology={topology} />}
+        {view === "compliance" && <ComplianceView />}
+        {view === "approvals" && <ApprovalsView />}
+        {view === "audit" && <AuditView />}
+        {view === "access" && (
+          <AccessView 
+            session={session} roles={roles} users={users} 
+            roleOptions={roleOptions} changeUserRole={changeUserRole} 
+          />
+        )}
 
-          {error && <p className="error" style={{ marginTop: "1rem" }}>{error}</p>}
-        </div>
+        {error && <p className="error" style={{ marginTop: "1rem" }}>{error}</p>}
       </main>
     </div>
   );

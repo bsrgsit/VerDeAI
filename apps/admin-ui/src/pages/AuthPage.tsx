@@ -1,5 +1,6 @@
 import React from "react";
-import { BRAND, IS_DEMO_MODE } from "@verdeai/shared";
+import { BRAND } from "@verdeai/shared";
+import { IS_DEMO_MODE } from "../lib/api";
 
 interface AuthPageProps {
   demoUsers: string[];

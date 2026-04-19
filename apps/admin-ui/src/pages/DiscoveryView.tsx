@@ -1,20 +1,10 @@
 import React from "react";
-import { 
-  Plus, 
-  Activity, 
-  Box, 
-  Link as LinkIcon, 
-  Key, 
-  Cpu, 
-  BarChart3,
-  Server,
-  Network
-} from "lucide-react";
-import { BRAND, IS_DEMO_MODE, hasPermission } from "@verdeai/shared";
-import { Session } from "../lib/api";
+import { BRAND } from "@verdeai/shared";
+import { IS_DEMO_MODE, hasPermission, Session } from "../lib/api";
 import { CredentialGroup, QueryAudit, PlatformTile } from "../types";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
+import { Icons } from "../components/ui/Icons";
 
 interface DiscoveryViewProps {
   session: Session;
@@ -69,128 +59,77 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
 }) => {
   return (
     <>
-      <header className="page-header">
+      <header className="content-header">
         <div>
-          <h1>{BRAND.name} Device Discovery Manager</h1>
-          <p>
-            Query infrastructure by IP or CIDR, bind credentials at group level, and build a generic topology.
+          <p className="eyebrow" style={{ color: "var(--ink-700)", marginBottom: "0.5rem" }}>
+            Discovery Engine
           </p>
-          <p className="meta">
-            Intelligent forecasting and power orchestration are key upcoming capabilities.
+          <h1>{BRAND.name} Discovery Manager</h1>
+          <p className="muted">
+            Query infrastructure by IP or CIDR, bind credentials, and map your topology.
           </p>
-          {IS_DEMO_MODE && <p className="meta">Running in UI-only demo mode.</p>}
         </div>
-        <div className="status-chip">Release 1 Scope</div>
+        <div className="header-actions">
+           {IS_DEMO_MODE && <span className="badge-soon">UI Demo Mode</span>}
+           <div className="status-chip">Release 1.2</div>
+        </div>
       </header>
 
-      <section className="stats-grid compact">
-        <article className="panel">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <div>
-              <p className="eyebrow">Inventory</p>
-              <h2>Assets</h2>
-            </div>
-            <Box size={20} color="#4b5320" />
+      <section className="dashboard-grid">
+        <article className="card">
+          <div className="card-title">
+            <span>Inventory Assets</span>
+            <Icons.Inventory size={20} />
           </div>
-          <strong>{stats.deviceCount}</strong>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+            <strong style={{ fontSize: "2rem" }}>{stats.deviceCount}</strong>
+            <span className="muted">Active nodes</span>
+          </div>
         </article>
-        <article className="panel">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <div>
-              <p className="eyebrow">Logical</p>
-              <h2>Links</h2>
-            </div>
-            <LinkIcon size={20} color="#4b5320" />
+
+        <article className="card">
+          <div className="card-title">
+            <span>Logical Links</span>
+            <Icons.Topology size={20} />
           </div>
-          <strong>{stats.linkCount}</strong>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+            <strong style={{ fontSize: "2rem" }}>{stats.linkCount}</strong>
+            <span className="muted">Mapped rels</span>
+          </div>
         </article>
-        <article className="panel">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <div>
-              <p className="eyebrow">Activity</p>
-              <h2>Queries</h2>
-            </div>
-            <BarChart3 size={20} color="#4b5320" />
+
+        <article className="card">
+          <div className="card-title">
+            <span>Query History</span>
+            <Icons.Compliance size={20} />
           </div>
-          <strong>{stats.queryCount}</strong>
-        </article>
-        <article className="panel">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <div>
-              <p className="eyebrow">Security</p>
-              <h2>Profiles</h2>
-            </div>
-            <Key size={20} color="#4b5320" />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+            <strong style={{ fontSize: "2rem" }}>{stats.queryCount}</strong>
+            <span className="muted">Jobs run</span>
           </div>
-          <strong>{stats.credentialGroupCount}</strong>
         </article>
       </section>
 
-      <section className="hero-grid">
-        <Card eyebrow="Release 1 Focus" title="Unified Discovery" className="hero-panel">
-          <p>
-            Discovery supports physical and virtual infrastructure via target selection, credential binding, and vendor-aware posture mapping.
-          </p>
-          <div style={{ marginTop: "1rem", display: "flex", gap: "1rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.8rem", color: "var(--ink-700)" }}>
-              <Network size={14} /> Network
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.8rem", color: "var(--ink-700)" }}>
-              <Server size={14} /> Compute
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.8rem", color: "var(--ink-700)" }}>
-              <Cpu size={14} /> Bare Metal
-            </div>
-          </div>
-        </Card>
-
-        <Card eyebrow="Architecture" title="Infrastructure Classes" className="vendor-panel">
-          <div className="vendor-grid">
-            {platformTiles.map((platform) => (
-              <div key={platform.name} className="vendor-tile">
-                {platform.image ? (
-                  <img src={platform.image} alt={platform.name} />
-                ) : (
-                  <div className="vendor-placeholder" />
-                )}
-                <div>
-                  <strong>{platform.name}</strong>
-                  <p>{platform.summary}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </section>
-
-      <section className="grid-discovery">
-        <Card
-          eyebrow="Target Mapping"
-          title="Discovery Query"
-          headerAction={
-            selectedCredentialGroup && (
-              <div className="selection-chip">
-                {selectedCredentialGroup.vendor} / {selectedCredentialGroup.protocol}
-              </div>
-            )
-          }
-        >
+      <section className="dashboard-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
+        <Card eyebrow="Unified Discovery" title="Discovery Parameters">
           {hasPermission(session.user, "discovery.write") ? (
             <>
               <label htmlFor="targets">IP Address or CIDR Targets</label>
               <textarea
                 id="targets"
                 className="input-area"
+                style={{ height: "100px", marginBottom: "1rem" }}
                 placeholder="e.g. 10.0.0.1, 192.168.1.0/24"
                 value={targetInput}
                 onChange={(e) => setTargetInput(e.target.value)}
               />
 
-              <label htmlFor="credentialGroup">Credential Group Profile</label>
+              <label htmlFor="credentialGroup">Credential Profile</label>
               <select
                 id="credentialGroup"
                 value={selectedCredentialGroupId}
                 onChange={(e) => setSelectedCredentialGroupId(e.target.value)}
+                style={{ marginBottom: "1.5rem" }}
               >
                 {credentialGroups.map((group) => (
                   <option key={group.id} value={group.id}>
@@ -200,46 +139,46 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
               </select>
 
               <Button onClick={runDiscovery} loading={busy} style={{ width: "100%", gap: "8px" }}>
-                <Activity size={16} />
+                <Icons.Discovery size={18} />
                 Submit Discovery Job
               </Button>
             </>
           ) : (
-            <p className="muted">Read-only role. Discovery submission is restricted.</p>
+            <div className="comp-item">
+              <p>Locked</p>
+              <span className="muted">Discovery submission is restricted to admin roles.</span>
+            </div>
           )}
         </Card>
 
         <Card eyebrow="Access Control" title="Credential Profiles">
-          <div className="credential-list">
+          <div className="credential-list" style={{ maxHeight: "200px", overflowY: "auto", marginBottom: "1.5rem" }}>
             {credentialGroups.map((group) => (
               <div
                 key={group.id}
                 className={`credential-card ${selectedCredentialGroupId === group.id ? "selected" : ""}`}
                 onClick={() => setSelectedCredentialGroupId(group.id)}
+                style={{ padding: "0.75rem", border: "1px solid var(--line)", borderRadius: "6px", marginBottom: "0.5rem", cursor: "pointer" }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                  <Key size={16} color="var(--ink-500)" />
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
                     <strong>{group.name}</strong>
-                    <p>{group.vendor} / {group.protocol}</p>
+                    <p className="muted" style={{ margin: 0, fontSize: "0.75rem" }}>{group.vendor} / {group.protocol}</p>
                   </div>
+                  <Icons.Credentials size={16} />
                 </div>
-                <span>{group.username}</span>
               </div>
             ))}
           </div>
 
-          <div className="credential-form">
-            <p className="eyebrow" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <Plus size={12} /> Add profile
-            </p>
-            <div className="form-split">
+          <div className="credential-form" style={{ borderTop: "1px solid var(--line)", paddingTop: "1rem" }}>
+            <div className="form-split" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
               <div>
-                <label>Profile Name</label>
+                <label>Name</label>
                 <input value={groupName} onChange={(e) => setGroupName(e.target.value)} />
               </div>
               <div>
-                <label>Vendor Class</label>
+                <label>Vendor</label>
                 <select value={groupVendor} onChange={(e) => setGroupVendor(e.target.value as any)}>
                   <option value="Cisco">Cisco</option>
                   <option value="Juniper">Juniper</option>
@@ -248,7 +187,7 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
                 </select>
               </div>
             </div>
-            <div className="form-split">
+            <div className="form-split" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginTop: "0.5rem" }}>
               <div>
                 <label>Protocol</label>
                 <select value={groupProtocol} onChange={(e) => setGroupProtocol(e.target.value as any)}>
@@ -262,13 +201,46 @@ export const DiscoveryView: React.FC<DiscoveryViewProps> = ({
                 <input value={groupUsername} onChange={(e) => setGroupUsername(e.target.value)} />
               </div>
             </div>
-            <label>Access Scope</label>
-            <input value={groupScope} onChange={(e) => setGroupScope(e.target.value)} placeholder="e.g. 10.0.0.0/8" />
-            <Button variant="secondary" onClick={addCredentialGroup} style={{ width: "100%", marginTop: "0.5rem" }}>
-              Create Profile
+            <Button variant="secondary" onClick={addCredentialGroup} style={{ width: "100%", marginTop: "1rem" }}>
+              <Icons.Plus size={14} /> Create Profile
             </Button>
           </div>
         </Card>
+      </section>
+
+      <section className="card" style={{ marginTop: "2rem" }}>
+         <div className="card-title">
+            <span>Recent Scan Audit</span>
+         </div>
+         <table className="data-table">
+            <thead>
+               <tr>
+                  <th>Job ID</th>
+                  <th>Submitted At</th>
+                  <th>Targets</th>
+                  <th>Credential Profile</th>
+                  <th>Status</th>
+               </tr>
+            </thead>
+            <tbody>
+               {queryAudit.map((q) => (
+                  <tr key={q.id}>
+                     <td><code>{q.id}</code></td>
+                     <td>{q.submittedAt}</td>
+                     <td>{q.targets.join(", ")}</td>
+                     <td>{q.credentialGroupName}</td>
+                     <td><span className="status-dot bg-green"></span> Completed</td>
+                  </tr>
+               ))}
+               <tr>
+                  <td><code>job_prev_01</code></td>
+                  <td>2023-10-27 12:00:00</td>
+                  <td>10.10.10.0/24</td>
+                  <td>Core_SSH</td>
+                  <td><span className="status-dot bg-green"></span> Completed</td>
+               </tr>
+            </tbody>
+         </table>
       </section>
     </>
   );
