@@ -23,7 +23,16 @@ type QueryAudit = {
 
 const demoUsers = ["admin@verdeai.local", "operator@verdeai.local", "auditor@verdeai.local"];
 const roleOptions: RoleName[] = ["platform_admin", "network_admin", "operator", "auditor"];
-const platformTiles = [
+type PlatformTile = {
+  name: string;
+  vendors: string;
+  summary: string;
+  image?: string;
+  sourceLabel?: string;
+  sourceUrl?: string;
+};
+
+const platformTiles: PlatformTile[] = [
   {
     name: "Switches",
     vendors: "Cisco, Juniper, Arista, Dell",
@@ -54,7 +63,7 @@ const platformTiles = [
     sourceLabel: "Wikimedia Commons",
     sourceUrl: "https://commons.wikimedia.org/wiki/File:Distro_swtich_used_under_The_Gathering_2025_(cropped-_Arista_switch).jpg",
   },
-] as const;
+];
 
 const initialCredentialGroups: CredentialGroup[] = [
   {
