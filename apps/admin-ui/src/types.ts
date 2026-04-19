@@ -3,6 +3,7 @@ import { RoleName } from "@verdeai/shared";
 export type View =
   | "dashboard"
   | "discovery"
+  | "inventory"
   | "topology"
   | "compliance"
   | "approvals"

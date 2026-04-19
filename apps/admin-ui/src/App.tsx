@@ -214,6 +214,7 @@ export function App() {
           />
         )}
 
+        {view === "inventory" && <TopologyView topology={topology} />}
         {view === "topology" && <TopologyView topology={topology} />}
         {view === "compliance" && <ComplianceView />}
         {view === "approvals" && <ApprovalsView />}

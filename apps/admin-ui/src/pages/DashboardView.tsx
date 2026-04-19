@@ -1,5 +1,5 @@
 import React from "react";
-import { Icons } from "../ui/Icons";
+import { Icons } from "../components/ui/Icons";
 
 export const DashboardView: React.FC = () => {
   return (
